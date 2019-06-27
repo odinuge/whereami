@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/briandowns/spinner"
 	"net/http"
 	"os/user"
 	"strings"
@@ -93,6 +94,9 @@ func main() {
 
 	flag.Parse()
 
+	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
+	s.Suffix = fmt.Sprintf(" Looking for you, %s! 🚲", strings.Title(*username))
+	s.Start()
 	client := &http.Client{Timeout: 10 * time.Second}
 
 	dockGroups, err := fetchDocks(client)
@@ -130,11 +134,12 @@ func main() {
 			break
 		}
 	}
+	s.Stop()
 	if found == nil {
-		fmt.Printf("Hi %s! Looks like you are out on a trip. Look back later! 🚲\n", strings.Title(*username))
+		fmt.Printf("Sorry %s! Looks like you are out on a trip. Look back later! 🚲\n", strings.Title(*username))
 		return
 	}
 
 	location := mappingDocks[strings.Split(key, "_")[1]]
-	fmt.Printf("Hi %s! You are now in/at/close to %s, more accurately: %.6f°N, %.6f°E 🚲\n", found.Name, location.Address, location.Coord.Lat, location.Coord.Lng)
+	fmt.Printf("Found you, %s! You are now in/at/close to %s, more accurately: %.6f°N, %.6f°E 🚲\n", found.Name, location.Address, location.Coord.Lat, location.Coord.Lng)
 }
