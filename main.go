@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"github.com/briandowns/spinner"
 	"net/http"
+	"os"
 	"os/user"
 	"strings"
 	"time"
 )
 
-const initialQuery = `{"query":"query{dockGroups(systemId: \"trondheim\") {id name coord{lat lng} address subTitle}}"}`
+const initialQuery = `{"query":"query{dockGroups(systemId: \"%s\") {id name coord{lat lng} address subTitle}}"}`
 
 type DockGroup struct {
 	ID       string `json:"id"`
@@ -43,8 +44,8 @@ var objmap map[string]*json.RawMessage
 
 var api = []byte{104, 116, 116, 112, 115, 58, 47, 47, 99, 111, 114, 101, 46, 117, 114, 98, 97, 110, 115, 104, 97, 114, 105, 110, 103, 46, 99, 111, 109, 47, 112, 117, 98, 108, 105, 99, 47, 97, 112, 105, 47, 118, 49, 47, 103, 114, 97, 112, 104, 113, 108}
 
-func fetchDocks(client *http.Client) ([]DockGroup, error) {
-	req, err := http.NewRequest("POST", string(api), bytes.NewBuffer([]byte(initialQuery)))
+func fetchDocks(client *http.Client, systemName string) ([]DockGroup, error) {
+	req, err := http.NewRequest("POST", string(api), bytes.NewBuffer([]byte(fmt.Sprintf(initialQuery, systemName))))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create request: %+v", err)
 	}
@@ -84,6 +85,12 @@ func fetchVehicleData(client *http.Client, query string) (*AllVehsData, error) {
 	return &allVehsData, nil
 }
 
+var systemMapping = map[string]string{
+	"oslo":      "oslobysykkel",
+	"bergen":    "bergen-city-bike",
+	"trondheim": "trondheim",
+}
+
 func main() {
 	currentUser, err := user.Current()
 	if err != nil {
@@ -91,19 +98,27 @@ func main() {
 		return
 	}
 	username := flag.String("name", currentUser.Username, "What is your first name? Defaults to your username")
+	city := flag.String("city", "Trondheim", "What city? (Trondheim, Bergen, Oslo)")
 
 	flag.Parse()
+
+	systemName, ok := systemMapping[strings.ToLower(*city)]
+
+	if !ok {
+		fmt.Printf("unknown city: %s\n", *city)
+		os.Exit(1)
+	}
 
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
 	s.Suffix = fmt.Sprintf(" Looking for you, %s! 🚲", strings.Title(*username))
 	s.Start()
 	client := &http.Client{Timeout: 10 * time.Second}
 
-	dockGroups, err := fetchDocks(client)
+	dockGroups, err := fetchDocks(client, systemName)
 
 	if err != nil {
-		fmt.Printf("unable to get dock info: %+v", err)
-		return
+		fmt.Printf("unable to get dock info: %+v\n", err)
+		os.Exit(1)
 	}
 
 	var query string
@@ -116,8 +131,8 @@ func main() {
 
 	allVehsData, err := fetchVehicleData(client, query)
 	if err != nil {
-		fmt.Printf("unable to get vehicles: %+v", err)
-		return
+		fmt.Printf("unable to get vehicles: %+v\n", err)
+		os.Exit(1)
 	}
 
 	var found *Vehicle

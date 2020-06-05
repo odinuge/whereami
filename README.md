@@ -1,8 +1,8 @@
 # whereami 🚲
 
-> Where in Trondheim am I right now? Inspired by `whoami´
+> Where in Trondheim/Oslo/Bergen am I right now? Inspired by `whoami´
 
-Wondering where in Trondheim you are? Just ask!
+Wondering where in Trondheim/Oslo/Bergen you are? Just ask!
 
 ```bash
 $ go get github.com/odinuge/whereami
@@ -37,6 +37,8 @@ $ whereami
 ```bash
 $ whereami -h
 Usage of whereami:
+  -city string
+    	What city? (Trondheim, Bergen, Oslo) (default "Trondheim")
   -name string
         What is your first name? Defaults to your username (default "<insert-your-username-here>")
 ```
