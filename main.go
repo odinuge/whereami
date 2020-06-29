@@ -110,7 +110,7 @@ func main() {
 	}
 
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
-	s.Suffix = fmt.Sprintf(" Looking for you, %s! 🚲", strings.Title(*username))
+	s.Suffix = fmt.Sprintf(" Looking for you in %s, %s! 🚲", strings.Title(*city), strings.Title(*username))
 	s.Start()
 	client := &http.Client{Timeout: 10 * time.Second}
 
